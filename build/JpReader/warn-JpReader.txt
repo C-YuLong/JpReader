@@ -19,7 +19,7 @@ missing module named grp - imported by shutil (delayed, optional), tarfile (opti
 missing module named urllib.urlopen - imported by urllib (delayed, optional), lxml.html (delayed, optional)
 missing module named urllib.urlencode - imported by urllib (delayed, optional), lxml.html (delayed, optional)
 missing module named urllib.unquote - imported by urllib (optional), ebooklib.epub (optional), mobi.compatibility_utils (optional)
-missing module named posix - imported by os (conditional, optional), shutil (conditional), importlib._bootstrap_external (conditional), posixpath (optional)
+missing module named posix - imported by os (conditional, optional), posixpath (optional), shutil (conditional), importlib._bootstrap_external (conditional)
 missing module named resource - imported by posix (top-level)
 missing module named _frozen_importlib_external - imported by importlib._bootstrap (delayed), importlib (optional), importlib.abc (optional), zipimport (top-level)
 excluded module named _frozen_importlib - imported by importlib (optional), importlib.abc (optional), zipimport (top-level)

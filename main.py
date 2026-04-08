@@ -79,6 +79,9 @@ class ReaderWindow(QMainWindow):
 
         self.statusBar()
 
+    def _current_book_title(self) -> str:
+        return self.book.title if self.book else ""
+
     def _build_reader_tab(self):
         w = QWidget()
         outer = QVBoxLayout(w)
@@ -134,7 +137,7 @@ class ReaderWindow(QMainWindow):
         self.text_view.selectionChanged.connect(self._on_selection_changed)
 
         # 浮条
-        self.floating_bar = FloatingBar(self.text_view.viewport(), mode="reader")
+        self.floating_bar = FloatingBar(self.text_view.viewport(), mode="reader", theme=self.config.get("theme", "light"))
         self.floating_bar.hide()
         self.floating_bar.highlight_clicked.connect(self.on_highlight)
         self.floating_bar.note_clicked.connect(self.on_save_as_reading_note)
@@ -154,7 +157,7 @@ class ReaderWindow(QMainWindow):
         rl.addWidget(self.ai_view, 1)
 
         # AI 面板专用浮条，只有「笔记」
-        self.ai_floating_bar = FloatingBar(self.ai_view.viewport(), mode="ai")
+        self.ai_floating_bar = FloatingBar(self.ai_view.viewport(), mode="ai", theme=self.config.get("theme", "light"))
         self.ai_floating_bar.hide()
         self.ai_floating_bar.note_clicked.connect(self.on_save_ai_selection_as_study)
 
@@ -189,6 +192,16 @@ class ReaderWindow(QMainWindow):
         if self.book:
             self.load_chapter(self.current_chapter)
         self._apply_background()
+        # 重建浮条以更新颜色
+        self.floating_bar = FloatingBar(self.text_view.viewport(), mode="reader", theme=new_theme)
+        self.floating_bar.hide()
+        self.floating_bar.highlight_clicked.connect(self.on_highlight)
+        self.floating_bar.note_clicked.connect(self.on_save_as_reading_note)
+        self.floating_bar.analyze_clicked.connect(self.on_analyze)
+
+        self.ai_floating_bar = FloatingBar(self.ai_view.viewport(), mode="ai", theme=new_theme)
+        self.ai_floating_bar.hide()
+        self.ai_floating_bar.note_clicked.connect(self.on_save_ai_selection_as_study)
 
 
     def _build_highlights_tab(self):
@@ -281,6 +294,7 @@ class ReaderWindow(QMainWindow):
             self.floating_bar.hide()
             return
         QTimer.singleShot(50, self._show_reader_bar)
+
 
     def _show_reader_bar(self):
         cursor = self.text_view.textCursor()
@@ -605,7 +619,7 @@ def main():
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
     w = ReaderWindow()
-    app.setStyleSheet(build_qss(w.config.get("theme", "light")))
+    app.setStyleSheet(build_qss(w.config.get("theme", "light"), int(w.config.get("ui_font_size", 13))))
     w.show()
     sys.exit(app.exec_())
 

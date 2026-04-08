@@ -1,4 +1,4 @@
-def build_qss(theme: str = "light") -> str:
+def build_qss(theme: str = "light", ui_font_size: int = 13) -> str:
     if theme == "dark":
         bg = "#1e1e20"
         surface = "#2a2a2d"
@@ -19,13 +19,13 @@ def build_qss(theme: str = "light") -> str:
         hover = "#f4f4f4"
         accent = "#2b2b2b"
         accent_bg = "#ececec"
-        selbg = "#ffe082"
+        selbg = "#b3d4fc"
         status_bg = "#f4f4f4"
 
     return f"""
 * {{
     font-family: "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    font-size: 13px;
+    font-size: {ui_font_size}px;
     color: {text};
 }}
 QMainWindow, QDialog, QWidget {{ background: {bg}; }}
@@ -59,8 +59,8 @@ QPushButton {{
 QPushButton:hover {{ background: {hover}; }}
 QPushButton:pressed {{ background: {accent_bg}; }}
 
-QLabel#h1 {{ font-size: 18px; font-weight: 600; color: {text}; }}
-QLabel#h2 {{ font-size: 14px; font-weight: 600; color: {text}; }}
+QLabel#h1 {{ font-size: {ui_font_size + 5}px; font-weight: 600; color: {text}; }}
+QLabel#h2 {{ font-size: {ui_font_size + 1}px; font-weight: 600; color: {text}; }}
 QLabel#muted {{ color: {sub}; }}
 
 QMenuBar {{ background: {bg}; border-bottom: 1px solid {border}; }}

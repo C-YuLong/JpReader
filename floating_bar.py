@@ -7,7 +7,7 @@ class FloatingBar(QFrame):
     note_clicked = pyqtSignal()
     analyze_clicked = pyqtSignal()
 
-    def __init__(self, parent=None, mode: str = "reader"):
+    def __init__(self, parent=None, mode: str = "reader", theme: str = "light"):
         """
         mode='reader' 显示：高亮 | 笔记 | 解析
         mode='ai'     显示：笔记（仅一项，因为是从 AI 解析面板划选的）
@@ -18,27 +18,42 @@ class FloatingBar(QFrame):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.mode = mode
 
-        self.setStyleSheet("""
-            QFrame#card {
-                background: #2b2b2d;
-                border-radius: 18px;
-            }
-            QPushButton {
+        if theme == "dark":
+            card_bg = "#3a3a3e"
+            text_color = "#e4e4e4"
+            hover_color = "#ffd66b"
+            sep_color = "#666"
+            shadow = "rgba(0,0,0,0.4)"
+        else:
+            card_bg = "#ffffff"
+            text_color = "#333333"
+            hover_color = "#0066cc"
+            sep_color = "#ddd"
+            shadow = "rgba(0,0,0,0.12)"
+
+        self.setStyleSheet(f"""
+            QFrame#card {{
+                background: {card_bg};
+                border-radius: 20px;
+                border: 1px solid {sep_color};
+            }}
+            QPushButton {{
                 background: transparent;
-                color: #ffffff;
+                color: {text_color};
                 border: none;
                 padding: 10px 20px;
                 font-size: 15px;
                 font-weight: 500;
-            }
-            QPushButton:hover { color: #ffd66b; }
-            QLabel#sep {
-                color: #555;
+            }}
+            QPushButton:hover {{ color: {hover_color}; }}
+            QLabel#sep {{
+                color: {sep_color};
                 padding: 0;
                 margin: 0;
                 font-size: 16px;
-            }
+            }}
         """)
+
 
         outer = QHBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)

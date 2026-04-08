@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import (
     QDialog, QFormLayout, QLineEdit, QPushButton, QLabel,
-    QVBoxLayout, QHBoxLayout, QMessageBox, QGroupBox, QComboBox
+    QVBoxLayout, QHBoxLayout, QMessageBox, QGroupBox, QComboBox, QWidget, QSlider, QFileDialog
 )
+from PyQt5.QtCore import Qt
+
 
 
 PRESET_ENDPOINTS = {
@@ -69,7 +71,6 @@ class SettingsDialog(QDialog):
         reset_btn.clicked.connect(self._reset_usage)
         ul.addRow(reset_btn)
         # --- 外观 ---
-        from PyQt5.QtWidgets import QSlider, QFileDialog
         look_box = QGroupBox("外观")
         look_form = QFormLayout(look_box)
 
