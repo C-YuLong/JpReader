@@ -1,0 +1,5 @@
+PyQt5==5.15.10
+ebooklib==0.18
+beautifulsoup4==4.12.3
+mobi==0.3.3
+requests==2.32.3
