@@ -1,4 +1,5 @@
-build/
-dist/
-JpReader.spec
-__pycache__/
+/build/
+/dist/
+/__pycache__/
+*.spec
+*.pyc
