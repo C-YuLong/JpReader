@@ -25,6 +25,10 @@ DEFAULT_CONFIG = {
     # v5 新增
     "data_dir": "",             # 数据目录，空则使用默认 %APPDATA%/JpReader
     "last_book_path": "",       # 上次打开的电子书路径
+    # MOJi 词典
+    "moji_session_token": "",   # 登录凭证（过期需重新登录）
+    "moji_username": "",
+    "moji_installation_id": "",
 }
 
 
@@ -110,6 +114,18 @@ class Storage:
                 content TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS vocabulary (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                word_id TEXT,
+                title TEXT,
+                spell TEXT DEFAULT '',
+                excerpt TEXT DEFAULT '',
+                detail_md TEXT DEFAULT '',
+                source_text TEXT DEFAULT '',
+                book_title TEXT DEFAULT '',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
         """)
         cols = [r[1] for r in c.execute("PRAGMA table_info(highlights)").fetchall()]
@@ -224,4 +240,36 @@ class Storage:
 
     def delete_reading_note(self, nid):
         self.conn.execute("DELETE FROM reading_notes WHERE id=?", (nid,))
+        self.conn.commit()
+
+    # --- 生词本（MOJi 词典收藏） ---
+    def add_vocab(self, word_id, title, spell="", excerpt="", detail_md="",
+                  source_text="", book_title=""):
+        """收藏词条；同一 word_id 已存在时返回 None。"""
+        if word_id and self.vocab_exists(word_id):
+            return None
+        cur = self.conn.execute("""
+            INSERT INTO vocabulary(word_id, title, spell, excerpt, detail_md,
+                                   source_text, book_title)
+            VALUES(?,?,?,?,?,?,?)
+        """, (word_id, title, spell, excerpt, detail_md, source_text, book_title))
+        self.conn.commit()
+        return cur.lastrowid
+
+    def vocab_exists(self, word_id):
+        if not word_id:
+            return False
+        row = self.conn.execute(
+            "SELECT 1 FROM vocabulary WHERE word_id=? LIMIT 1", (word_id,)
+        ).fetchone()
+        return row is not None
+
+    def list_vocab(self):
+        rows = self.conn.execute(
+            "SELECT * FROM vocabulary ORDER BY id DESC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def delete_vocab(self, vid):
+        self.conn.execute("DELETE FROM vocabulary WHERE id=?", (vid,))
         self.conn.commit()

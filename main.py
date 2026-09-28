@@ -13,6 +13,8 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from reader_core import Book
 from storage import Storage, load_config, save_config, get_data_dir
 from ai_client import AIClient
+from moji_dict import MojiClient
+from dictionary_panel import DictionaryPanel, VocabPanel
 from settings_dialog import SettingsDialog
 from notes_panel import NotesPanel
 from floating_bar import FloatingBar
@@ -60,6 +62,7 @@ class ReaderWindow(QMainWindow):
         data_dir = get_data_dir(self.config)
         self.storage = Storage(data_dir / "data.db")
         self.ai = AIClient(self.config)
+        self.moji = MojiClient(self.config)
         self.book: Book | None = None
         self.current_chapter = 0
         self.last_highlight_id = None
@@ -89,6 +92,13 @@ class ReaderWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
 
         self.tabs.addTab(self._build_reader_tab(), "阅读")
+        self.dict_panel = DictionaryPanel(
+            self.moji, self.storage, get_book_title=self._current_book_title
+        )
+        self.dict_panel.login_required.connect(self.open_settings)
+        self.tabs.addTab(self.dict_panel, "词典")
+        self.vocab_panel = VocabPanel(self.storage)
+        self.tabs.addTab(self.vocab_panel, "生词本")
         self.study_panel = NotesPanel(self.storage, kind="study")
         self.tabs.addTab(self.study_panel, "学习笔记")
         self.reading_panel = NotesPanel(
@@ -166,6 +176,7 @@ class ReaderWindow(QMainWindow):
         self.floating_bar.highlight_clicked.connect(self.on_highlight)
         self.floating_bar.note_clicked.connect(self.on_save_as_reading_note)
         self.floating_bar.analyze_clicked.connect(self.on_analyze)
+        self.floating_bar.lookup_clicked.connect(self.on_lookup)
 
         # 右：AI 面板
         right = QWidget()
@@ -231,6 +242,7 @@ class ReaderWindow(QMainWindow):
         self.floating_bar.highlight_clicked.connect(self.on_highlight)
         self.floating_bar.note_clicked.connect(self.on_save_as_reading_note)
         self.floating_bar.analyze_clicked.connect(self.on_analyze)
+        self.floating_bar.lookup_clicked.connect(self.on_lookup)
 
         self.ai_floating_bar = FloatingBar(
             self.ai_view.viewport(), mode="ai", theme=theme,
@@ -404,6 +416,7 @@ class ReaderWindow(QMainWindow):
         menu.addAction("高亮", self.on_highlight)
         menu.addAction("存为学习笔记", self.on_save_as_study)
         menu.addAction("存为阅读笔记", self.on_save_as_reading_note)
+        menu.addAction("查词", self.on_lookup)
         menu.addAction("AI 解析", self.on_analyze)
         menu.exec_(self.text_view.mapToGlobal(pos))
 
@@ -539,6 +552,14 @@ class ReaderWindow(QMainWindow):
                 start_pos=start, end_pos=end, color=hl["bg"],
             )
 
+    def on_lookup(self):
+        """划词查词：跳到词典页并查询选中文本。"""
+        text = self._selected_text_current()
+        if not text:
+            return
+        self.tabs.setCurrentWidget(self.dict_panel)
+        self.dict_panel.lookup(text)
+
     def on_analyze(self):
         text = self._selected_text_current()
         if not text:
@@ -600,6 +621,8 @@ class ReaderWindow(QMainWindow):
             self.config = dlg.get_config()
             save_config(self.config)
             self.ai.config = self.config
+            self.moji.config = self.config
+            self.dict_panel.refresh_login_state()
             self._update_status()
             self._apply_background()
             ui_fs = int(self.config.get("ui_font_size", 15))

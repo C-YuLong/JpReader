@@ -6,11 +6,12 @@ class FloatingBar(QFrame):
     highlight_clicked = pyqtSignal()
     note_clicked = pyqtSignal()
     analyze_clicked = pyqtSignal()
+    lookup_clicked = pyqtSignal()
 
     def __init__(self, parent=None, mode: str = "reader", theme: str = "light",
                  ui_font_size: int = 15):
         """
-        mode='reader' 显示：高亮 | 笔记 | 解析
+        mode='reader' 显示：高亮 | 笔记 | 查词 | 解析
         mode='ai'     显示：笔记（仅一项，因为是从 AI 解析面板划选的）
         """
         super().__init__(parent)
@@ -76,14 +77,18 @@ class FloatingBar(QFrame):
         if mode == "reader":
             self.btn_hl = QPushButton("高亮")
             self.btn_note = QPushButton("笔记")
+            self.btn_lookup = QPushButton("查词")
             self.btn_ai = QPushButton("解析")
             lay.addWidget(self.btn_hl)
             lay.addWidget(sep())
             lay.addWidget(self.btn_note)
             lay.addWidget(sep())
+            lay.addWidget(self.btn_lookup)
+            lay.addWidget(sep())
             lay.addWidget(self.btn_ai)
             self.btn_hl.clicked.connect(self._emit_hl)
             self.btn_note.clicked.connect(self._emit_note)
+            self.btn_lookup.clicked.connect(self._emit_lookup)
             self.btn_ai.clicked.connect(self._emit_ai)
         else:  # ai
             self.btn_note = QPushButton("记入学习笔记")
@@ -95,6 +100,9 @@ class FloatingBar(QFrame):
 
     def _emit_note(self):
         self.hide(); self.note_clicked.emit()
+
+    def _emit_lookup(self):
+        self.hide(); self.lookup_clicked.emit()
 
     def _emit_ai(self):
         self.hide(); self.analyze_clicked.emit()

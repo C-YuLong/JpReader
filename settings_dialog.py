@@ -3,8 +3,32 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QMessageBox, QGroupBox, QComboBox,
     QWidget, QSlider, QFileDialog, QScrollArea
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from storage import DEFAULT_APP_DIR, get_data_dir
+from moji_dict import MojiClient, MojiError
+
+
+class _LoginWorker(QThread):
+    done = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, username, password):
+        super().__init__()
+        self.username = username
+        self.password = password
+
+    def run(self):
+        try:
+            client = MojiClient({})
+            token, user = client.login(self.username, self.password)
+            self.done.emit({
+                "token": token,
+                "username": user.get("username") or self.username,
+            })
+        except MojiError as e:
+            self.failed.emit(str(e))
+        except Exception as e:
+            self.failed.emit(f"网络错误：{e}")
 
 
 PRESET_ENDPOINTS = {
@@ -58,6 +82,42 @@ class SettingsDialog(QDialog):
         form.addRow("日语水平：", self.jp_level)
 
         layout.addWidget(api_box)
+
+        # --- MOJi 词典账号 ---
+        moji_box = QGroupBox("MOJi 词典账号（查词用）")
+        moji_form = QFormLayout(moji_box)
+
+        self.lbl_moji_status = QLabel(self._moji_status_text())
+        self.lbl_moji_status.setObjectName("muted")
+        moji_form.addRow("状态：", self.lbl_moji_status)
+
+        self.moji_user = QLineEdit(self.config.get("moji_username", ""))
+        self.moji_user.setPlaceholderText("MOJi 用户名或邮箱")
+        self.moji_pass = QLineEdit()
+        self.moji_pass.setEchoMode(QLineEdit.Password)
+        self.moji_pass.setPlaceholderText("密码（仅用于换取登录凭证，本地保存 token）")
+        moji_form.addRow("账号：", self.moji_user)
+        moji_form.addRow("密码：", self.moji_pass)
+
+        moji_btns = QHBoxLayout()
+        self.btn_moji_login = QPushButton("登录")
+        self.btn_moji_logout = QPushButton("退出登录")
+        moji_btns.addWidget(self.btn_moji_login)
+        moji_btns.addWidget(self.btn_moji_logout)
+        moji_btns.addStretch(1)
+        moji_btn_wrap = QWidget()
+        moji_btn_wrap.setLayout(moji_btns)
+        moji_form.addRow(moji_btn_wrap)
+
+        hint = QLabel("账号密码只发给 mojidict.com 官方接口换取登录凭证；"
+                      "应用本地只保存登录 token，不保存密码。")
+        hint.setObjectName("muted")
+        hint.setWordWrap(True)
+        moji_form.addRow(hint)
+
+        self.btn_moji_login.clicked.connect(self._moji_login)
+        self.btn_moji_logout.clicked.connect(self._moji_logout)
+        layout.addWidget(moji_box)
 
         # --- 外观 ---
         look_box = QGroupBox("外观")
@@ -211,6 +271,45 @@ class SettingsDialog(QDialog):
             self.base_url.setText(url)
         if model:
             self.model.setText(model)
+
+    # --- MOJi 登录 ---
+    def _moji_status_text(self) -> str:
+        token = self.config.get("moji_session_token", "")
+        name = self.config.get("moji_username", "")
+        if token:
+            return f"已登录：{name or '（未知账号）'}（查词额度已解锁）"
+        return "未登录（查词仍可用，登录后额度更高）"
+
+    def _moji_login(self):
+        u = self.moji_user.text().strip()
+        p = self.moji_pass.text()
+        if not u or not p:
+            QMessageBox.warning(self, "提示", "请输入 MOJi 账号和密码。")
+            return
+        self.btn_moji_login.setEnabled(False)
+        self.lbl_moji_status.setText("正在登录…")
+        self._login_worker = _LoginWorker(u, p)
+        self._login_worker.done.connect(self._moji_login_done)
+        self._login_worker.failed.connect(self._moji_login_failed)
+        self._login_worker.start()
+
+    def _moji_login_done(self, info: dict):
+        self.btn_moji_login.setEnabled(True)
+        self.config["moji_session_token"] = info["token"]
+        self.config["moji_username"] = info["username"]
+        self.moji_pass.clear()
+        self.lbl_moji_status.setText(self._moji_status_text())
+        QMessageBox.information(self, "登录成功", f"已登录 MOJi：{info['username']}")
+
+    def _moji_login_failed(self, msg: str):
+        self.btn_moji_login.setEnabled(True)
+        self.lbl_moji_status.setText(self._moji_status_text())
+        QMessageBox.warning(self, "登录失败", msg)
+
+    def _moji_logout(self):
+        self.config["moji_session_token"] = ""
+        self.config["moji_username"] = ""
+        self.lbl_moji_status.setText(self._moji_status_text())
 
     def _reset_usage(self):
         if QMessageBox.question(self, "确认", "确定要清零用量统计吗？") == QMessageBox.Yes:

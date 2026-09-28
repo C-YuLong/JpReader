@@ -56,6 +56,15 @@ It is designed for a smooth workflow:
   - learning tips
 - Supports OpenAI-compatible endpoints
 
+### 📖 MOJi Dictionary Integration（MOJi辞書）
+- 与 MOJi辞書 浏览器插件同源的查词体验，无需浏览器
+- **划词查词**：阅读时选中文本 → 浮条点「查词」→ 自动跳转词典页查询
+- **云端查词**：假名、中日英、罗马音自动识别（调用 mojidict.com 官方接口）
+- **词条详情**：释义、音调（⓪①②…）、词性、日文释义、例句与翻译
+- **账号登录（可选）**：未登录也能查词；在「设置」中登录 MOJi 账号可解锁更高查词额度，本地只保存登录 token
+- **生词本**：一键收藏词条，含完整释义与例句，支持删除与导出 Markdown
+- **在线词典直达**：Weblio / Jisho / Kotobank / Google 翻译一键跳转（无需登录）
+
 ### 📝 Notes System
 - **Study Notes**: grammar / vocabulary / reusable language notes
 - **Reading Notes**: notes tied to a specific book and chapter
@@ -145,6 +154,8 @@ reader/
 ├── main.py
 ├── reader_core.py
 ├── ai_client.py
+├── moji_dict.py          # MOJi辞書 查词/登录封装
+├── dictionary_panel.py   # 词典页 + 生词本页
 ├── storage.py
 ├── settings_dialog.py
 ├── notes_panel.py
